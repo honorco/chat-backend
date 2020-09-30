@@ -1,3 +1,5 @@
 from django.contrib import admin
-
-# Register your models here.
+from api.models import UserID, Chat, Message
+admin.site.register(UserID)
+admin.site.register(Chat)
+admin.site.register(Message)

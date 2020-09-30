@@ -11,5 +11,5 @@ class Message(models.Model):
     text = models.TextField()
 
 
-class UserCounter(models.Model):
-    pass
+class UserID(models.Model):
+    count = models.IntegerField()
