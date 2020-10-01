@@ -1,6 +1,6 @@
 from django.http import HttpResponse
-from api.models import UserID
-
+from api.models import UserID, Chat
+from django.core import serializers
 
 def index(req):
     return HttpResponse('Hello, world!')
@@ -16,3 +16,11 @@ def getID(req):
 
     user.save()
     return HttpResponse(user.count)
+
+
+def getChats(req):
+    return HttpResponse(serializers.serialize('json', Chat.objects.all()))
+
+
+def createChat(req):
+    chat = Chat(name=req.name)

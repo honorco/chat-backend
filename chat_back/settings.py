@@ -25,7 +25,7 @@ SECRET_KEY = '=wx_6&lbfi1r+5uhi2#k=ub3-0_kr88it$2qrr%)annp(ub%43'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['musaev.online']
+ALLOWED_HOSTS = ['musaev.online', 'localhost']
 
 
 # Application definition
