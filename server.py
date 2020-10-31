@@ -1,23 +1,55 @@
+from abc import ABC
 try:
     import thread
 except ImportError:
     import _thread as thread
-from abc import ABC
 import tornado.web
 import tornado.websocket
 import tornado.ioloop
 import json
 import asyncio
+import psycopg2
+
+con = psycopg2.connect(
+    database="db_chat",
+    user="maks",
+    password="2",
+    host="musaev.online",
+    port="5432"
+)
+
+cur = con.cursor()
+
 
 clients = []
 
+
 class MessageController:
     @staticmethod
-    def create(self, data):
-        for client in [c for c in clients if c != self]:
+    def create(connection, data):
+        data = json.loads(data)
+        print(data)
+        cur.execute(
+            f"INSERT INTO message (text_message, time, author, chat_id) VALUES ('{data['text_message']}', '{data['time']}', '{data['author']}', '{data['chat_id']}')"
+        )
+        con.commit()
+        for client in [c for c in clients if c != connection]:
             client.send('/messages/create', data)
 
-routes = {"/messages/create": MessageController.create}
+    @staticmethod
+    def get():
+        pass
+
+
+class ChatController:
+    @staticmethod
+    def get():
+        pass
+
+
+routes = {"/messages/create": MessageController.create, "/chats/get": ChatController.get,
+          "/messages/get": MessageController.get}
+
 
 class ServerConnector(tornado.websocket.WebSocketHandler, ABC):
     def open(self):
@@ -37,6 +69,7 @@ class ServerConnector(tornado.websocket.WebSocketHandler, ABC):
         clients.remove(self)
         print("WebSocket closed")
 
+
 def initServer():
     asyncio.set_event_loop(asyncio.new_event_loop())
     application = tornado.web.Application([(r"/", ServerConnector)])
@@ -47,8 +80,8 @@ def initServer():
     except KeyboardInterrupt:
         tornado.ioloop.IOLoop.current().stop()
 
+
 thread.start_new_thread(initServer, ())
 
 while True:
-    msg = input()
-    clients[0].send('/messages/create', msg)
+    pass
