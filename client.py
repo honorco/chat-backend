@@ -64,6 +64,5 @@ connector = ClientConnector('localhost', 8765, {"/messages/create": MessageContr
 
 while True:
     input()
-    #connector.send('/messages/get_list', json.dumps({'since': '2020-10-31 21:06:00', 'chat_id': 1}), callback=lambda connection, x: print(x))
-    connector.send('/messages/get', callback=lambda self, x: print(x))
+    connector.send('/messages/get_list', json.dumps({'since': '2020-10-31 21:06:00', 'chat_id': 2}), callback=lambda connection, x: print(x))
 

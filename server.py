@@ -54,7 +54,7 @@ class MessageController:
         data = json.loads(data)
         cur = con.cursor()
         cur.execute(
-            f"SELECT * FROM message WHERE chat_id = 1"
+            f"SELECT * FROM message WHERE chat_id = {data.get('chat_id')}"
         )
         content = cur.fetchall()
         print(content)
