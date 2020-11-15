@@ -62,14 +62,14 @@ class MessageController:
         return json.dumps(content, default=myconverter)
 
 
-
 class ChatController:
     @staticmethod
     def get():
         pass
 
 
-routes = {"/messages/create": MessageController.create, "/messages/get": MessageController.get, "/chats/get": ChatController.get, "/messages/get_list": MessageController.get_list}
+routes = {"/messages/create": MessageController.create, "/messages/get": MessageController.get,
+          "/chats/get": ChatController.get, "/messages/get_list": MessageController.get_list}
 
 
 class ServerConnector(tornado.websocket.WebSocketHandler, ABC):
@@ -109,19 +109,11 @@ class ServerConnector(tornado.websocket.WebSocketHandler, ABC):
         print("WebSocket closed")
 
 
-def initServer():
-    asyncio.set_event_loop(asyncio.new_event_loop())
-    application = tornado.web.Application([(r"/", ServerConnector)])
-    application.listen(8765, '0.0.0.0')
-    try:
-        loop = tornado.ioloop.IOLoop.current()
-        loop.start()
-    except KeyboardInterrupt:
-        tornado.ioloop.IOLoop.current().stop()
-
-
-thread.start_new_thread(initServer, ())
-
-while True:
-    msg = input()
-    clients[0].send('check', callback=lambda self, x: print(x))
+asyncio.set_event_loop(asyncio.new_event_loop())
+application = tornado.web.Application([(r"/", ServerConnector)])
+application.listen(8765, '0.0.0.0')
+try:
+    loop = tornado.ioloop.IOLoop.current()
+    loop.start()
+except KeyboardInterrupt:
+    tornado.ioloop.IOLoop.current().stop()
