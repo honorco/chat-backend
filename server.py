@@ -29,7 +29,7 @@ callbacks: Dict[int, Callable] = {}
 
 def myconverter(o):
     if isinstance(o, datetime.datetime):
-        return "{}-{}-{}".format(o.year, o.month, o.day)
+        return o.__str__()
 
 
 class MessageController:
@@ -51,7 +51,16 @@ class MessageController:
 
     @staticmethod
     def get_list(connection, data):
-        pass
+        data = json.loads(data)
+        cur = con.cursor()
+        cur.execute(
+            f"SELECT * FROM message WHERE chat_id = 1"
+        )
+        content = cur.fetchall()
+        print(content)
+        con.close()
+        return json.dumps(content, default=myconverter)
+
 
 
 class ChatController:
