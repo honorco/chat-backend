@@ -26,6 +26,7 @@ class ClientConnector:
         self.loop.call_soon_threadsafe(self.connected.set_result, 0)
 
     def on_message(self, message):
+        # print(message)
         message: Dict = json.loads(message)
         server_id = message.get('server_id')
         client_id = message.get('client_id')
@@ -52,7 +53,7 @@ class ClientConnector:
         self.ws.send(json.dumps(res))
 
 
-connector = ClientConnector('localhost', 8765, {})
-connector.send('/messages/get', json.dumps({'chat_id': 1, 'since': '2020-10-31 20:00:00'}), callback=lambda connection, x: print(x))
+connector = ClientConnector('musaev.online', 8765, {})
+connector.send('/chats/get', callback=lambda connection, x: print(x))
 
-time.sleep(1)
+time.sleep(5)

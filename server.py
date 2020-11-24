@@ -22,13 +22,12 @@ con = psycopg2.connect(
     host="musaev.online",
     port="5432"
 )
-cur = con.cursor()
 
 clients = []
 callbacks: Dict[int, Callable] = {}
 
 
-def myconverter(o):
+def my_converter(o):
     if isinstance(o, datetime.datetime):
         return o.__str__()
 
@@ -36,37 +35,57 @@ def myconverter(o):
 class MessageController:
     @staticmethod
     def create(connection, data):
-        data = json.loads(data)
-
-        cur.execute(
-            f"INSERT INTO message (text_message, time, author, chat_id) VALUES ('{data['text_message']}', '{data['time']}', '{data['author']}', '{data['chat_id']}')"
-        )
-        con.commit()
-        for client in [c for c in clients if c != connection]:
-            client.send('/messages/create', data)
+        try:
+            data = json.loads(data)
+            cur = con.cursor()
+            cur.execute(
+                f"INSERT INTO message (text_message, time, author, chat_id) VALUES ('{data['text_message']}', '{data['time']}', '{data['author']}', '{data['chat_id']}')"
+            )
+            con.commit()
+            cur.close()
+            for client in [c for c in clients if c != connection]:
+                client.send('/messages/create', data)
+            return json.dumps({'status': 'ok'})
+        except Exception as e:
+            print(str(e))
+            return json.dumps({'status': 'fail'})
 
     @staticmethod
     def get(connection, data):
-        data = json.loads(data)
-        filters = f"WHERE chat_id = {data.get('chat_id')}"
-        since = data.get('since')
-        if since:
-            filters += f" AND time > '{since}'"
-        cur.execute(
-            f"SELECT * FROM message " + filters
-        )
-        content = cur.fetchall()
-        print(content)
-        return json.dumps(content, default=myconverter)
+        try:
+            cur = con.cursor()
+            data = json.loads(data)
+            filters = f"WHERE chat_id = {data.get('chat_id')}"
+            since = data.get('since')
+            if since:
+                filters += f" AND time > '{since}'"
+            cur.execute(
+                f"SELECT * FROM message " + filters
+            )
+            content = cur.fetchall()
+            cur.close()
+            return json.dumps(content, default=my_converter)
+        except Exception as e:
+            print(str(e))
+            return json.dumps({'status': 'fail'})
 
 
 class ChatController:
     @staticmethod
-    def get():
-        pass
+    def get(connection, data):
+        try:
+            cur = con.cursor()
+            cur.execute('SELECT * FROM chat')
+            content = cur.fetchall()
+            cur.close()
+            return json.dumps(content, default=my_converter)
+        except Exception as e:
+            print(str(e))
+            return json.dumps({'status': 'fail'})
 
 
-routes = {"/messages/create": MessageController.create, "/messages/get": MessageController.get, "/chats/get": ChatController.get}
+routes = {"/messages/create": MessageController.create, "/messages/get": MessageController.get,
+          "/chats/get": ChatController.get}
 
 
 class ServerConnector(tornado.websocket.WebSocketHandler, ABC):
@@ -75,6 +94,7 @@ class ServerConnector(tornado.websocket.WebSocketHandler, ABC):
         print("WebSocket opened")
 
     def on_message(self, message: str):
+        # print(message)
         message: Dict = json.loads(message)
         server_id = message.get('server_id')
         client_id = message.get('client_id')
