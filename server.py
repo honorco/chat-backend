@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List, Tuple, Dict
+from typing import Dict
 from collections.abc import Callable
 
 try:
@@ -22,6 +22,7 @@ con = psycopg2.connect(
     host="musaev.online",
     port="5432"
 )
+cur = con.cursor()
 
 clients = []
 callbacks: Dict[int, Callable] = {}
@@ -36,29 +37,26 @@ class MessageController:
     @staticmethod
     def create(connection, data):
         data = json.loads(data)
-        cur = con.cursor()
+
         cur.execute(
             f"INSERT INTO message (text_message, time, author, chat_id) VALUES ('{data['text_message']}', '{data['time']}', '{data['author']}', '{data['chat_id']}')"
         )
         con.commit()
-        con.close()
         for client in [c for c in clients if c != connection]:
             client.send('/messages/create', data)
 
     @staticmethod
     def get(connection, data):
-        return "this is data"
-
-    @staticmethod
-    def get_list(connection, data):
         data = json.loads(data)
-        cur = con.cursor()
+        filters = f"WHERE chat_id = {data.get('chat_id')}"
+        since = data.get('since')
+        if since:
+            filters += f" AND time > '{since}'"
         cur.execute(
-            f"SELECT * FROM message WHERE chat_id = {data.get('chat_id')}"
+            f"SELECT * FROM message " + filters
         )
         content = cur.fetchall()
         print(content)
-        con.close()
         return json.dumps(content, default=myconverter)
 
 
@@ -68,8 +66,7 @@ class ChatController:
         pass
 
 
-routes = {"/messages/create": MessageController.create, "/messages/get": MessageController.get,
-          "/chats/get": ChatController.get, "/messages/get_list": MessageController.get_list}
+routes = {"/messages/create": MessageController.create, "/messages/get": MessageController.get, "/chats/get": ChatController.get}
 
 
 class ServerConnector(tornado.websocket.WebSocketHandler, ABC):
@@ -78,7 +75,6 @@ class ServerConnector(tornado.websocket.WebSocketHandler, ABC):
         print("WebSocket opened")
 
     def on_message(self, message: str):
-        print(message)
         message: Dict = json.loads(message)
         server_id = message.get('server_id')
         client_id = message.get('client_id')

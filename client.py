@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Callable
 from typing import Dict
 
@@ -14,12 +15,17 @@ callbacks: Dict[int, Callable] = {}
 
 class ClientConnector:
     def __init__(self, url, port, routes):
+        self.loop = asyncio.get_event_loop()
+        self.connected = asyncio.Future()
+        self.ws = websocket.WebSocketApp(f"ws://{url}:{port}", on_message=self.on_message, on_open=self.on_open)
         self.routes = routes
-        self.ws = websocket.WebSocketApp(f"ws://{url}:{port}", on_message=self.on_message)
-        thread.start_new_thread(lambda: self.ws.run_forever(), ())
+        thread.start_new_thread(self.ws.run_forever, ())
+        self.loop.run_until_complete(self.connected)
+
+    def on_open(self):
+        self.loop.call_soon_threadsafe(self.connected.set_result, 0)
 
     def on_message(self, message):
-        print(message)
         message: Dict = json.loads(message)
         server_id = message.get('server_id')
         client_id = message.get('client_id')
@@ -46,23 +52,7 @@ class ClientConnector:
         self.ws.send(json.dumps(res))
 
 
-class MessageController:
-    @staticmethod
-    def create(self, data):
-        print(data)
+connector = ClientConnector('localhost', 8765, {})
+connector.send('/messages/get', json.dumps({'chat_id': 1, 'since': '2020-10-31 20:00:00'}), callback=lambda connection, x: print(x))
 
-    @staticmethod
-    def check(self, data):
-        return 'Chek worked!'
-
-    @staticmethod
-    def get_list(self, data):
-        print(data)
-
-
-connector = ClientConnector('localhost', 8765, {"/messages/create": MessageController.create, "check": MessageController.check, "/messages/get_list": MessageController.get_list})
-
-while True:
-    input()
-    connector.send('/messages/get_list', json.dumps({'since': '2020-10-31 21:06:00', 'chat_id': 1}), callback=lambda connection, x: print(x))
-
+time.sleep(1)
