@@ -14,16 +14,37 @@ callbacks: Dict[int, Callable] = {}
 
 
 class ClientConnector:
-    def __init__(self, url, port, routes):
+    def __init__(self, url, port, routes, on_connected=None):
+        self.url, self.port = url, port
+        self.routes = routes
+        self.on_connected = on_connected
+        self.last_time_connected = None
         self.loop = asyncio.get_event_loop()
         self.connected = asyncio.Future()
-        self.ws = websocket.WebSocketApp(f"ws://{url}:{port}", on_message=self.on_message, on_open=self.on_open)
-        self.routes = routes
-        thread.start_new_thread(self.ws.run_forever, ())
+        self.ws = websocket.WebSocketApp(f"ws://{self.url}:{self.port}",
+                                         on_message=self.on_message,
+                                         on_open=self.on_open,
+                                         on_close=self.on_close
+                                         )
+        self.connect()
         self.loop.run_until_complete(self.connected)
+
+    def connect(self):
+        import random
+        print('try', random.randint(0, 10))
+        thread.start_new_thread(self.ws.run_forever, ())
 
     def on_open(self):
         self.loop.call_soon_threadsafe(self.connected.set_result, 0)
+        self.on_connected(self)
+        self.last_time_connected = None
+
+    def on_close(self):
+        if not self.last_time_connected:
+            self.last_time_connected = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+        time.sleep(1)
+        self.ws.close()
+        self.connect()
 
     def on_message(self, message):
         # print(message)
@@ -53,7 +74,12 @@ class ClientConnector:
         self.ws.send(json.dumps(res))
 
 
-connector = ClientConnector('musaev.online', 8765, {})
-connector.send('/chats/get', callback=lambda connection, x: print(x))
+def on_connected(connection):
+    connection.send('/messages/get', json.dumps({'chat_id': 1, 'since': connection.last_time_connected}),
+                    callback=lambda _, x: print(x))
 
-time.sleep(5)
+
+connector = ClientConnector('localhost', 8765, {}, on_connected=on_connected)
+connector.send('/chats/get', callback=lambda _, x: print(x))
+
+time.sleep(50)
