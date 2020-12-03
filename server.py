@@ -48,6 +48,7 @@ class MessageController:
             return json.dumps({'status': 'ok'})
         except Exception as e:
             print(str(e))
+            cur.close()
             return json.dumps({'status': 'fail'})
 
     @staticmethod
@@ -67,6 +68,7 @@ class MessageController:
             return json.dumps(content, default=my_converter)
         except Exception as e:
             print(str(e))
+            cur.close()
             return json.dumps({'status': 'fail'})
 
 
@@ -81,6 +83,7 @@ class ChatController:
             return json.dumps(content, default=my_converter)
         except Exception as e:
             print(str(e))
+            cur.close()
             return json.dumps({'status': 'fail'})
 
 
