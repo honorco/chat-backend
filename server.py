@@ -58,8 +58,11 @@ class MessageController:
             data = json.loads(data)
             filters = f"WHERE chat_id = {data.get('chat_id')}"
             since = data.get('since')
+            last_id = data.get('last_id')
             if since:
                 filters += f" AND time > '{since}'"
+            if last_id:
+                filters += f" AND id > {last_id}"
             cur.execute(
                 f"SELECT * FROM message " + filters
             )
