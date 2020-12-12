@@ -80,12 +80,7 @@ class ChatController:
     def get(connection, data):
         try:
             cur = con.cursor()
-            data = json.loads(data)
-            last_id = data.get('last_id')
-            filters = 'WHERE 1=1'
-            if last_id:
-                filters += f' AND id > {last_id}'
-            cur.execute(f'SELECT * FROM chat {filters}')
+            cur.execute('SELECT * FROM chat')
             content = cur.fetchall()
             cur.close()
             return json.dumps(content, default=my_converter)
