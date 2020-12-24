@@ -1,11 +1,8 @@
 import asyncio
+import ssl
+import threading
 from collections.abc import Callable
 from typing import Dict
-
-try:
-    import thread
-except ImportError:
-    import _thread as thread
 import websocket
 import json
 import time
@@ -21,7 +18,7 @@ class ClientConnector:
         self.last_time_connected = None
         self.loop = asyncio.get_event_loop()
         self.connected = asyncio.Future()
-        self.ws = websocket.WebSocketApp(f"ws://{self.url}:{self.port}",
+        self.ws = websocket.WebSocketApp(f"wss://{self.url}:{self.port}",
                                          on_message=self.on_message,
                                          on_open=self.on_open,
                                          on_close=self.on_close
@@ -32,7 +29,7 @@ class ClientConnector:
     def connect(self):
         import random
         print('try', random.randint(0, 10))
-        thread.start_new_thread(self.ws.run_forever, ())
+        threading.Thread(target=self.ws.run_forever, kwargs={'sslopt': {"cert_reqs": ssl.CERT_NONE}}).start()
 
     def on_open(self):
         self.loop.call_soon_threadsafe(self.connected.set_result, 0)
